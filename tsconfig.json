@@ -1,7 +1,11 @@
 {
+  // 继承基础配置
   "extends": "./.wxt/tsconfig.json",
+  // 编译器选项
   "compilerOptions": {
+    // 允许导入带有.ts扩展名的文件
     "allowImportingTsExtensions": true,
+    // 使用React JSX语法
     "jsx": "react-jsx"
   }
 }
