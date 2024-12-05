@@ -6,6 +6,13 @@
     // 允许导入带有.ts扩展名的文件
     "allowImportingTsExtensions": true,
     // 使用React JSX语法
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    // 设置模块解析的基准目录为当前目录
+    "baseUrl": ".",
+    // 配置路径别名
+    "paths": {
+      // 将以 @/ 开头的导入路径映射到当前目录
+      "@/*": ["./*"]
+    }
   }
 }
