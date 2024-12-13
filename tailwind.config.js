@@ -4,14 +4,7 @@ export default {
   darkMode: ["class"],
   // 指定 Tailwind CSS 应用的文件路径
   content: [
-    "./{components,entrypoints,lib}/**/*.{js,jsx,ts,tsx}",
-    "./*.html",
-    "./**/*.css",
-  ],
-  // 排除的文件路径
-  exclude: [
-    "./node_modules/**/*",
-    "./dist/**/*",
+    "./{components,entrypoints}/**/*.{html,tsx}",
   ],
   // 扩展默认主题
   theme: {

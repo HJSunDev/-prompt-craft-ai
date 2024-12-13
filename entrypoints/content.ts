@@ -1,4 +1,4 @@
-import { sendMessage } from '@/utils/messaging';
+import { sendMessage } from '@/lib/messaging';
 
 
 // 定义内容脚本

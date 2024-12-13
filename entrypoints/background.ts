@@ -1,5 +1,5 @@
 
-import { onMessage } from '@/utils/messaging';
+import { onMessage } from '@/lib/messaging';
 
 // 定义后台脚本
 export default defineBackground(() => {
