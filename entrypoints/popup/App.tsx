@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 
+import { AuroraBackground } from '@/components/ui/aurora-background';
+
 // 主应用组件
 function AppContent() {
   // 当前页面状态
@@ -32,9 +34,9 @@ function AppContent() {
   }
 
   return (
-    <div className='flex flex-col w-[320px] h-[600px] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200'>
+    <div className='flex flex-col w-[320px] h-[600px] bg-transparent dark:bg-transparent text-gray-800 dark:text-gray-200'>
       {/* 页面头部 */}
-      <header className='flex items-center justify-between p-4 border-b dark:border-gray-800'>
+      <header className='flex items-center justify-between p-4 border-b border-gray-200/10 backdrop-blur-md'>
         <h1 className='text-xl font-semibold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent'>
           Prompt Craft
         </h1>
@@ -71,7 +73,7 @@ function AppContent() {
             <li>
               <Button
                 variant="outline"
-                className='w-full h-32 flex flex-col items-center justify-center gap-2 group hover:border-blue-500 dark:border-gray-700 dark:hover:border-blue-500'
+                className='w-full h-32 flex flex-col items-center justify-center gap-2 group hover:border-blue-500 dark:border-gray-700/50 dark:hover:border-blue-500 backdrop-blur-sm bg-white/10 dark:bg-gray-900/20'
                 onClick={() => setCurrentView('promptManager')}
                 aria-label="进入提示词管理"
               >
@@ -82,7 +84,7 @@ function AppContent() {
             <li>
               <Button
                 variant="outline"
-                className='w-full h-32 flex flex-col items-center justify-center gap-2 group hover:border-purple-500 dark:border-gray-700 dark:hover:border-purple-500'
+                className='w-full h-32 flex flex-col items-center justify-center gap-2 group hover:border-purple-500 dark:border-gray-700/50 dark:hover:border-purple-500 backdrop-blur-sm bg-white/10 dark:bg-gray-900/20'
                 aria-label="开始 AI 对话"
               >
                 <Sparkles className='h-8 w-8 text-purple-500 group-hover:scale-110 transition-transform' />
@@ -96,7 +98,7 @@ function AppContent() {
         <section aria-labelledby="recent-prompts-heading">
           <h2 
             id="recent-prompts-heading" 
-            className='text-sm font-medium text-gray-600 dark:text-gray-400'
+            className='text-sm font-medium text-gray-800 dark:text-gray-200'
           >
             最近使用
           </h2>
@@ -104,12 +106,12 @@ function AppContent() {
             <li>
               <Button
                 variant="ghost"
-                className='w-full justify-start text-left h-auto py-2 px-3'
+                className='w-full justify-start text-left h-auto py-2 px-3 backdrop-blur-sm bg-white/10 dark:bg-gray-900/20'
                 aria-label="使用翻译助手提示词"
               >
                 <article>
                   <h3 className='font-medium'>翻译助手</h3>
-                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1'>
+                  <p className='text-xs text-gray-700 dark:text-gray-300 mt-1 line-clamp-1'>
                     请将以下内容翻译成中文，要准确、地道...
                   </p>
                 </article>
@@ -118,12 +120,12 @@ function AppContent() {
             <li>
               <Button
                 variant="ghost"
-                className='w-full justify-start text-left h-auto py-2 px-3'
+                className='w-full justify-start text-left h-auto py-2 px-3 backdrop-blur-sm bg-white/10 dark:bg-gray-900/20'
                 aria-label="使用代码优化提示词"
               >
                 <article>
                   <h3 className='font-medium'>代码优化</h3>
-                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1'>
+                  <p className='text-xs text-gray-700 dark:text-gray-300 mt-1 line-clamp-1'>
                     请帮我优化以下代码，使其更加简洁高效...
                   </p>
                 </article>
@@ -134,8 +136,8 @@ function AppContent() {
       </main>
 
       {/* 页面底部 */}
-      <footer className='p-4 border-t dark:border-gray-800'>
-        <p className='text-xs text-center text-gray-500 dark:text-gray-400'>
+      <footer className='p-4 border-t border-gray-200/10 backdrop-blur-md'>
+        <p className='text-xs text-center text-gray-700 dark:text-gray-300'>
           Version 1.0.0 - Made with ❤️
         </p>
       </footer>
@@ -147,7 +149,13 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <div className="relative w-[320px] h-[600px] overflow-hidden">
+        <AuroraBackground className="absolute inset-0 !h-full">
+          <div className="relative z-10 w-full h-full bg-white/[0.5] dark:bg-zinc-900/[0.6] backdrop-blur-[1px]">
+            <AppContent />
+          </div>
+        </AuroraBackground>
+      </div>
     </ThemeProvider>
   );
 }

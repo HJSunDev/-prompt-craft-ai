@@ -49,6 +49,10 @@ export default {
         md: `calc(var(--radius) - 2px)`,
         sm: "calc(var(--radius) - 4px)",
       },
+      // aceternity库极光背景
+      animation: {
+        aurora: "aurora 70s linear infinite",
+      },
     },
   },
   // 插件
