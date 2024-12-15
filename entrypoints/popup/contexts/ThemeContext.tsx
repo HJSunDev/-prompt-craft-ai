@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { themeStorage, type Theme } from '@/lib/storage';
 
 interface ThemeContextType {
   isDark: boolean;
@@ -9,19 +10,29 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   // 暗模式状态
-  const [isDark, setIsDark] = useState(() => {
-    // 从本地存储读取暗模式偏好
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme === 'dark';
-  });
+  const [isDark, setIsDark] = useState(false);
+  // 是否已初始化
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // 监听暗模式变化，更新 DOM 和本地存储
+  // 初始化时从 storage 读取主题设置
   useEffect(() => {
+    const initTheme = async () => {
+      const theme = await themeStorage.getWithDefault();
+      setIsDark(theme === 'dark');
+      setIsInitialized(true);
+    };
+    initTheme();
+  }, []);
+
+  // 只有在初始化完成后，才开始监听和同步主题变化
+  useEffect(() => {
+    if (!isInitialized) return;
+
     // 更新 DOM
     document.documentElement.classList.toggle('dark', isDark);
-    // 保存到本地存储
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
+    // 保存到 storage
+    themeStorage.set(isDark ? 'dark' : 'light');
+  }, [isDark, isInitialized]);
 
   // 切换暗模式
   const toggleTheme = () => {

@@ -1,16 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Search, Plus, Copy, Edit, Trash2, ArrowLeft } from 'lucide-react';
-
-// 定义提示词类型
-interface Prompt {
-  id: string;
-  title: string;
-  content: string;
-  tags: string[];
-}
+import { promptsStorage, type Prompt } from '@/lib/storage';
 
 interface PromptManagerProps {
   onBack: () => void;
@@ -18,27 +11,29 @@ interface PromptManagerProps {
 
 export function PromptManager({ onBack }: PromptManagerProps) {
   // 提示词列表状态
-  const [prompts, setPrompts] = useState<Prompt[]>([
-    {
-      id: '1',
-      title: '翻译助手',
-      content: '请将以下内容翻译成中文，要准确、地道：\n\n[在此粘贴需要翻译的内容]',
-      tags: ['翻译']
-    },
-    {
-      id: '2',
-      title: '代码优化',
-      content: '请帮我优化以下代码，使其更加简洁高效：\n\n```\n[在此粘贴代码]\n```',
-      tags: ['编程']
-    }
-  ]);
-  
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
   // 搜索关键词状态
   const [searchKey, setSearchKey] = useState('');
   // 编辑状态
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   // 临时编辑数据
   const [editForm, setEditForm] = useState<Prompt | null>(null);
+
+  // 加载提示词列表
+  useEffect(() => {
+    console.log('Loading prompts...');
+    promptsStorage.getWithDefault().then(data => {
+      console.log('Loaded prompts:', data);
+      setPrompts(data);
+    });
+
+    const unwatch = promptsStorage.watch(data => {
+      console.log('Prompts updated:', data);
+      setPrompts(data);
+    });
+
+    return () => unwatch();
+  }, []);
 
   // 处理编辑
   const handleEdit = (prompt: Prompt) => {
@@ -47,12 +42,19 @@ export function PromptManager({ onBack }: PromptManagerProps) {
   };
 
   // 处理保存
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editForm) return;
     
-    setPrompts(prompts.map(p => 
-      p.id === editForm.id ? editForm : p
-    ));
+    const updatedPrompt = {
+      ...editForm,
+      updatedAt: Date.now()
+    };
+
+    const newPrompts = prompts.map(p => 
+      p.id === updatedPrompt.id ? updatedPrompt : p
+    );
+
+    await promptsStorage.set(newPrompts);
     setEditingPrompt(null);
     setEditForm(null);
   };
@@ -64,7 +66,7 @@ export function PromptManager({ onBack }: PromptManagerProps) {
   };
 
   // 编辑表单更新
-  const updateForm = (field: keyof Prompt, value: string) => {
+  const updateForm = (field: keyof Omit<Prompt, 'id' | 'createdAt' | 'updatedAt'>, value: string) => {
     if (!editForm) return;
     setEditForm({
       ...editForm,
@@ -72,6 +74,39 @@ export function PromptManager({ onBack }: PromptManagerProps) {
     });
   };
 
+  // 处理添加新提示词
+  const handleAdd = async () => {
+    const newPrompt: Prompt = {
+      id: crypto.randomUUID(),
+      title: '新提示词',
+      content: '',
+      tags: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    const newPrompts = [...prompts, newPrompt];
+    await promptsStorage.set(newPrompts);
+    handleEdit(newPrompt);
+  };
+
+  // 处理删除提示词
+  const handleDelete = async (id: string) => {
+    const newPrompts = prompts.filter(p => p.id !== id);
+    await promptsStorage.set(newPrompts);
+  };
+
+  // 过滤提示词
+  const filteredPrompts = searchKey
+    ? prompts.filter(p => 
+        p.title.toLowerCase().includes(searchKey.toLowerCase()) ||
+        p.content.toLowerCase().includes(searchKey.toLowerCase()) ||
+        p.tags.some(tag => tag.toLowerCase().includes(searchKey.toLowerCase()))
+      )
+    : prompts;
+
+  console.log('Rendering prompts:', filteredPrompts);
+
+  // 编辑视图
   if (editingPrompt) {
     return (
       <main className='flex flex-col w-[320px] h-[600px] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200'>
@@ -130,6 +165,7 @@ export function PromptManager({ onBack }: PromptManagerProps) {
     );
   }
 
+  // 列表视图
   return (
     <main className='flex flex-col w-[320px] h-[600px] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200'>
       {/* 顶部搜索和添加区 */}
@@ -151,54 +187,70 @@ export function PromptManager({ onBack }: PromptManagerProps) {
             onChange={(e) => setSearchKey(e.target.value)}
           />
         </div>
-        <Button size="icon" variant="outline" className="dark:border-gray-700">
+        <Button 
+          size="icon" 
+          variant="outline" 
+          className="dark:border-gray-700"
+          onClick={handleAdd}
+        >
           <Plus className='h-4 w-4' />
         </Button>
       </div>
 
       {/* 提示词列表区 */}
       <div className='flex-1 overflow-y-auto p-4'>
-        {prompts.map((prompt) => (
-          <div
-            key={prompt.id}
-            className='mb-4 p-3 border rounded-lg hover:border-blue-500 transition-colors dark:border-gray-700'
-          >
-            <div className='flex items-center justify-between mb-2'>
-              <h3 className='font-medium'>{prompt.title}</h3>
-              <div className='flex gap-1'>
-                <Button size="icon" variant="ghost" className='h-8 w-8'>
-                  <Copy className='h-4 w-4' />
-                </Button>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className='h-8 w-8'
-                  onClick={() => handleEdit(prompt)}
-                >
-                  <Edit className='h-4 w-4' />
-                </Button>
-                <Button size="icon" variant="ghost" className='h-8 w-8 text-red-500 dark:text-red-400'>
-                  <Trash2 className='h-4 w-4' />
-                </Button>
+        {filteredPrompts.length === 0 ? (
+          <div className='text-center text-gray-500 dark:text-gray-400 mt-8'>
+            {searchKey ? '没有找到匹配的提示词' : '还没有添加提示词'}
+          </div>
+        ) : (
+          filteredPrompts.map((prompt) => (
+            <div
+              key={prompt.id}
+              className='mb-4 p-3 border rounded-lg hover:border-blue-500 transition-colors dark:border-gray-700'
+            >
+              <div className='flex items-center justify-between mb-2'>
+                <h3 className='font-medium'>{prompt.title}</h3>
+                <div className='flex gap-1'>
+                  <Button size="icon" variant="ghost" className='h-8 w-8'>
+                    <Copy className='h-4 w-4' />
+                  </Button>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className='h-8 w-8'
+                    onClick={() => handleEdit(prompt)}
+                  >
+                    <Edit className='h-4 w-4' />
+                  </Button>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className='h-8 w-8 text-red-500 dark:text-red-400'
+                    onClick={() => handleDelete(prompt.id)}
+                  >
+                    <Trash2 className='h-4 w-4' />
+                  </Button>
+                </div>
+              </div>
+              
+              <p className='text-sm text-gray-600 dark:text-gray-400 line-clamp-2'>
+                {prompt.content}
+              </p>
+              
+              <div className='flex gap-2 mt-2'>
+                {prompt.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className='px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full'
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             </div>
-            
-            <p className='text-sm text-gray-600 dark:text-gray-400 line-clamp-2'>
-              {prompt.content}
-            </p>
-            
-            <div className='flex gap-2 mt-2'>
-              {prompt.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className='px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full'
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </main>
   );
