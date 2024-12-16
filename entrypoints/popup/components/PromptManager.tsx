@@ -37,19 +37,33 @@ export function PromptManager() {
       updatedAt: Date.now()
     };
 
-    const newPrompts = prompts.map(p => 
-      p.id === updatedPrompt.id ? updatedPrompt : p
-    );
+    // 如果是新增提示词
+    if (!prompts.find(p => p.id === updatedPrompt.id)) {
+      await promptsStorage.set([...prompts, updatedPrompt]);
+    } else {
+      // 如果是编辑已有提示词
+      const newPrompts = prompts.map(p => 
+        p.id === updatedPrompt.id ? updatedPrompt : p
+      );
+      await promptsStorage.set(newPrompts);
+    }
 
-    await promptsStorage.set(newPrompts);
     setEditingPrompt(null);
     setEditForm(null);
   };
 
   // 处理取消
   const handleCancel = () => {
-    setEditingPrompt(null);
-    setEditForm(null);
+    // 如果是新增状态（editingPrompt 存在但在 prompts 中不存在）
+    if (editingPrompt && !prompts.find(p => p.id === editingPrompt.id)) {
+      // 直接关闭编辑状态，不需要其他操作
+      setEditingPrompt(null);
+      setEditForm(null);
+    } else {
+      // 如果是编辑已有提示词，直接关闭编辑状态
+      setEditingPrompt(null);
+      setEditForm(null);
+    }
   };
 
   // 编辑表单更新
@@ -62,7 +76,7 @@ export function PromptManager() {
   };
 
   // 处理添加新提示词
-  const handleAdd = async () => {
+  const handleAdd = () => {
     const newPrompt: Prompt = {
       id: crypto.randomUUID(),
       title: '新提示词',
@@ -71,9 +85,9 @@ export function PromptManager() {
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
-    const newPrompts = [...prompts, newPrompt];
-    await promptsStorage.set(newPrompts);
-    handleEdit(newPrompt);
+    // 直接进入编辑状态，不保存到存储中
+    setEditingPrompt(newPrompt);
+    setEditForm({ ...newPrompt });
   };
 
   // 处理删除提示词
