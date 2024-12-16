@@ -180,19 +180,28 @@ export function PromptManager() {
         </div>
 
         {/* 底部操作栏 */}
-        <div className="p-4 border-t border-gray-200/10 bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm">
-          <div className="flex justify-end gap-2">
-            <Button 
-              variant="ghost" 
-              onClick={handleCancel}
-            >
-              取消
-            </Button>
-            <Button 
-              onClick={handleSave}
-            >
-              保存
-            </Button>
+        <div className="relative">
+          {/* 分隔线 */}
+          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-gray-200/0 via-gray-200/30 to-gray-200/0 dark:from-gray-700/0 dark:via-gray-700/30 dark:to-gray-700/0" />
+          
+          <div className="px-4 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
+            <div className="flex justify-end items-center gap-2">
+              <Button 
+                variant="ghost"
+                size="sm"
+                onClick={handleCancel}
+                className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              >
+                取消
+              </Button>
+              <Button 
+                size="sm"
+                onClick={handleSave}
+                className="bg-blue-500/90 hover:bg-blue-600/90 text-white"
+              >
+                保存
+              </Button>
+            </div>
           </div>
         </div>
       </div>
