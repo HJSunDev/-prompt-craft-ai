@@ -45,4 +45,5 @@ export * from './factory';
 
 // 导出存储模块
 export { themeStorage, type Theme } from './modules/theme';
-export { promptsStorage, type Prompt } from './modules/prompts'; 
+export { promptsStorage, type Prompt } from './modules/prompts';
+export { modulesStorage, type Module } from './modules/modules'; 

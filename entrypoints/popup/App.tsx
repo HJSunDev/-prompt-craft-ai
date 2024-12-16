@@ -1,37 +1,74 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import { PromptManager } from './components/PromptManager';
+import { ModuleSettings } from './components/ModuleSettings';
 import { Button } from '@/components/ui/button';
 import { 
   Settings, 
   MessageSquarePlus,
   Sparkles,
   Moon,
-  Sun
+  Sun,
+  Layers
 } from 'lucide-react';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
-
 import { AuroraBackground } from '@/components/ui/aurora-background';
+import { modulesStorage, type Module } from '@/lib/storage/modules/modules';
+import * as Icons from 'lucide-react';
+
+type View = 'home' | 'promptManager' | 'moduleSettings';
 
 // 主应用组件
 function AppContent() {
   // 当前页面状态
-  const [currentView, setCurrentView] = useState<'home' | 'promptManager'>('home');
+  const [currentView, setCurrentView] = useState<View>('home');
   // 使用主题上下文
   const { isDark, toggleTheme } = useTheme();
+  // 模块配置
+  const [modules, setModules] = useState<Module[]>([]);
+
+  // 加载模块配置
+  useEffect(() => {
+    modulesStorage.getWithDefault().then(setModules);
+    const unwatch = modulesStorage.watch(setModules);
+    return () => unwatch();
+  }, []);
+
+  // 获取图标组件
+  const getIconComponent = (iconName: string) => {
+    const Icon = (Icons as any)[iconName];
+    return Icon ? <Icon className="h-8 w-8" /> : null;
+  };
 
   // 返回主页
   const handleBack = () => {
     setCurrentView('home');
   };
 
-  if (currentView === 'promptManager') {
-    return (
-      <div className="relative">
-        <PromptManager onBack={handleBack} />
-      </div>
-    );
+  // 渲染特定模块
+  const renderModule = (moduleId: string) => {
+    switch (moduleId) {
+      case 'prompt-manager':
+        return <PromptManager onBack={handleBack} />;
+      default:
+        return null;
+    }
+  };
+
+  if (currentView === 'moduleSettings') {
+    return <ModuleSettings onClose={handleBack} />;
   }
+
+  if (currentView !== 'home') {
+    const moduleToRender = modules.find(m => m.id === currentView);
+    if (moduleToRender) {
+      return renderModule(moduleToRender.id);
+    }
+  }
+
+  const enabledModules = modules
+    .filter(m => m.enabled)
+    .sort((a, b) => a.order - b.order);
 
   return (
     <div className='flex flex-col w-[320px] h-[600px] bg-transparent dark:bg-transparent text-gray-800 dark:text-gray-200'>
@@ -58,81 +95,46 @@ function AppContent() {
           <Button 
             variant="ghost" 
             size="icon"
-            aria-label="打开设置"
+            onClick={() => setCurrentView('moduleSettings')}
+            aria-label="模块设置"
           >
-            <Settings className='h-5 w-5' />
+            <Layers className='h-5 w-5' />
           </Button>
         </div>
       </header>
 
       {/* 主要内容区 */}
       <main className='flex-1 p-4 space-y-4 overflow-y-auto'>
-        {/* 功能导航区 */}
-        <nav aria-label="主要功能">
-          <ul className='grid grid-cols-2 gap-4'>
-            <li>
-              <Button
-                variant="outline"
-                className='w-full h-32 flex flex-col items-center justify-center gap-2 group hover:border-blue-500 dark:border-gray-700/50 dark:hover:border-blue-500 backdrop-blur-sm bg-white/10 dark:bg-gray-900/20'
-                onClick={() => setCurrentView('promptManager')}
-                aria-label="进入提示词管理"
-              >
-                <MessageSquarePlus className='h-8 w-8 text-blue-500 group-hover:scale-110 transition-transform' />
-                <span className='text-sm font-medium'>提示词管理</span>
-              </Button>
-            </li>
-            <li>
-              <Button
-                variant="outline"
-                className='w-full h-32 flex flex-col items-center justify-center gap-2 group hover:border-purple-500 dark:border-gray-700/50 dark:hover:border-purple-500 backdrop-blur-sm bg-white/10 dark:bg-gray-900/20'
-                aria-label="开始 AI 对话"
-              >
-                <Sparkles className='h-8 w-8 text-purple-500 group-hover:scale-110 transition-transform' />
-                <span className='text-sm font-medium'>AI 对话</span>
-              </Button>
-            </li>
-          </ul>
-        </nav>
-
-        {/* 最近使用区域 */}
-        <section aria-labelledby="recent-prompts-heading">
-          <h2 
-            id="recent-prompts-heading" 
-            className='text-sm font-medium text-gray-800 dark:text-gray-200'
-          >
-            最近使用
-          </h2>
-          <ul className='mt-3 space-y-2'>
-            <li>
-              <Button
-                variant="ghost"
-                className='w-full justify-start text-left h-auto py-2 px-3 backdrop-blur-sm bg-white/10 dark:bg-gray-900/20'
-                aria-label="使用翻译助手提示词"
-              >
-                <article>
-                  <h3 className='font-medium'>翻译助手</h3>
-                  <p className='text-xs text-gray-700 dark:text-gray-300 mt-1 line-clamp-1'>
-                    请将以下内容翻译成中文，要准确、地道...
-                  </p>
-                </article>
-              </Button>
-            </li>
-            <li>
-              <Button
-                variant="ghost"
-                className='w-full justify-start text-left h-auto py-2 px-3 backdrop-blur-sm bg-white/10 dark:bg-gray-900/20'
-                aria-label="使用代码优化提示词"
-              >
-                <article>
-                  <h3 className='font-medium'>代码优化</h3>
-                  <p className='text-xs text-gray-700 dark:text-gray-300 mt-1 line-clamp-1'>
-                    请帮我优化以下代码，使其更加简洁高效...
-                  </p>
-                </article>
-              </Button>
-            </li>
-          </ul>
-        </section>
+        {enabledModules.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+            <div className="max-w-[240px] space-y-2">
+              <h2 className="text-xl font-semibold text-gray-600 dark:text-gray-300">
+                开启你的 AI 之旅
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                点击右上角的模块设置，选择你需要的功能开始使用
+              </p>
+            </div>
+          </div>
+        ) : (
+          <nav aria-label="功能模块">
+            <ul className='grid grid-cols-2 gap-4'>
+              {enabledModules.map(module => (
+                <li key={module.id}>
+                  <Button
+                    variant="outline"
+                    className='w-full h-32 flex flex-col items-center justify-center gap-2 group hover:border-blue-500 dark:border-gray-700/50 dark:hover:border-blue-500 backdrop-blur-sm bg-white/10 dark:bg-gray-900/20'
+                    onClick={() => setCurrentView(module.id as View)}
+                    aria-label={`进入${module.name}`}
+                  >
+                    {getIconComponent(module.icon)}
+                    <span className='text-sm font-medium'>{module.name}</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
       </main>
 
       {/* 页面底部 */}
@@ -151,7 +153,7 @@ function App() {
     <ThemeProvider>
       <div className="relative w-[320px] h-[600px] overflow-hidden">
         <AuroraBackground className="absolute inset-0 !h-full">
-          <div className="relative z-10 w-full h-full bg-white/[0.5] dark:bg-zinc-900/[0.6] backdrop-blur-[1px]">
+          <div className="relative z-10 w-full h-full">
             <AppContent />
           </div>
         </AuroraBackground>
