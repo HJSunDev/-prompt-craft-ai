@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Plus, Copy, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Copy, Edit, Trash2, Check } from 'lucide-react';
 import { promptsStorage, type Prompt } from '@/lib/storage';
+import { cn } from '@/lib/utils';
 
 export function PromptManager() {
   // 提示词列表状态
@@ -14,6 +15,10 @@ export function PromptManager() {
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   // 临时编辑数据
   const [editForm, setEditForm] = useState<Prompt | null>(null);
+  // 复制状态管理
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  // 定时器引用
+  const copyTimeoutRef = useRef<NodeJS.Timeout>();
 
   // 加载提示词列表
   useEffect(() => {
@@ -104,6 +109,35 @@ export function PromptManager() {
         p.tags.some(tag => tag.toLowerCase().includes(searchKey.toLowerCase()))
       )
     : prompts;
+
+  // 处理复制
+  const handleCopy = async (prompt: Prompt) => {
+    try {
+      await navigator.clipboard.writeText(prompt.content);
+      
+      // 清除之前的定时器
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+      
+      setCopiedId(prompt.id);
+      // 设置新的定时器
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopiedId(null);
+      }, 2000);
+    } catch (err) {
+      console.error('复制失败:', err);
+    }
+  };
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // 编辑视图
   if (editingPrompt) {
@@ -210,10 +244,29 @@ export function PromptManager() {
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className='h-8 w-8'
-                      onClick={() => navigator.clipboard.writeText(prompt.content)}
+                      className={cn(
+                        'relative h-8 w-8 transition-all duration-300',
+                        copiedId === prompt.id && 'text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-500'
+                      )}
+                      onClick={() => handleCopy(prompt)}
                     >
-                      <Copy className='h-4 w-4' />
+                      <div className="relative">
+                        {copiedId === prompt.id ? (
+                          <Check className='h-4 w-4 animate-scale-in' />
+                        ) : (
+                          <Copy className='h-4 w-4' />
+                        )}
+                        {copiedId === prompt.id && (
+                          <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2">
+                            <div className="relative">
+                              <div className="px-3 py-1.5 text-xs font-medium text-white/90 rounded-lg bg-blue-500/90 dark:bg-blue-500/90 shadow-lg whitespace-nowrap animate-fade-in-up backdrop-blur-sm">
+                                已复制
+                                <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 transform rotate-45 w-[10px] h-[10px] bg-blue-500/90 dark:bg-blue-500/90" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </Button>
                     <Button 
                       size="icon" 
