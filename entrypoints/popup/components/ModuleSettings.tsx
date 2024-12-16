@@ -31,7 +31,7 @@ export function ModuleSettings({ onClose }: ModuleSettingsProps) {
   const toggleModule = (moduleId: string) => {
     const newModules = modules.map(m => {
       if (m.id === moduleId) {
-        // ���果是启用模块，将其添加到已启用列表的最后
+        // 果是启用模块，将其添加到已启用列表的最后
         const maxOrder = Math.max(...modules.filter(mod => mod.enabled).map(mod => mod.order), -1);
         return { 
           ...m, 
@@ -108,7 +108,7 @@ export function ModuleSettings({ onClose }: ModuleSettingsProps) {
 
   return (
     <div className="flex flex-col h-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-md">
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="p-4 space-y-6">
           {/* 已启用的模块 */}
           <div className="space-y-3">

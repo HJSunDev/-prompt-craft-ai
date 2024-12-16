@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 import './styles/animations.css';
+import './styles/scrollbar.css';
 import { PromptManager } from './components/PromptManager';
 import { ModuleSettings } from './components/ModuleSettings';
 import { ModuleNavbar } from './components/ModuleNavbar';

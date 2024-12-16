@@ -95,7 +95,9 @@ export function PromptManager() {
   if (editingPrompt) {
     return (
       <div className='flex flex-col h-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-md'>
-        <div className='flex-1 overflow-y-auto'>
+        <div 
+          className='flex-1 overflow-y-auto custom-scrollbar'
+        >
           <div className='p-4 space-y-4'>
             <div className='space-y-2'>
               <label className='text-sm font-medium'>标题</label>
@@ -176,7 +178,7 @@ export function PromptManager() {
       </div>
 
       {/* 提示词列表 */}
-      <div className='flex-1 overflow-y-auto'>
+      <div className='flex-1 overflow-y-auto custom-scrollbar'>
         <div className='p-4 space-y-3'>
           {filteredPrompts.length === 0 ? (
             <div className='text-center text-gray-500 dark:text-gray-400 mt-8'>
