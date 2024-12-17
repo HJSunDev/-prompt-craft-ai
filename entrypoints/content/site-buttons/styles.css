@@ -1,0 +1,55 @@
+.pc-site-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1.5px solid #3b82f6;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #3b82f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: absolute;
+  right: -56px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 99999;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  margin: 0;
+  min-width: unset;
+  min-height: unset;
+  max-width: unset;
+  max-height: unset;
+  outline: none;
+  backdrop-filter: blur(8px);
+}
+
+.pc-site-button:hover {
+  background: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(59, 130, 246, 0.2);
+  transform: translateY(-50%) scale(1.02);
+}
+
+.pc-site-button:active {
+  transform: translateY(-50%) scale(0.98);
+}
+
+.pc-site-button svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.5;
+  display: block;
+  opacity: 1;
+  visibility: visible;
+  min-width: unset;
+  min-height: unset;
+  max-width: unset;
+  max-height: unset;
+  margin: 0 auto;
+} 
