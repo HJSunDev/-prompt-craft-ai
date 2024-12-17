@@ -59,6 +59,27 @@
   }
 }
 
+@keyframes message-in {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+  40% {
+    transform: translateY(2px);
+  }
+  60% {
+    transform: translateY(-1px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-slide-in-left {
   animation: slide-in-left 0.2s ease-out;
 }
@@ -77,4 +98,8 @@
 
 .animate-scale-in {
   animation: scale-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.animate-message-in {
+  animation: message-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 } 

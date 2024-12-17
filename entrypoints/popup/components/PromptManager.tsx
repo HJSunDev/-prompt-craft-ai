@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Plus, Copy, Edit, Trash2, Check, Link, Link2Off } from 'lucide-react';
+import { Search, Plus, Copy, Edit, Trash2, Check, Link, Link2Off, AlertCircle } from 'lucide-react';
 import { promptsStorage, type Prompt } from '@/lib/storage';
 import { actionConfigStorage, type ActionConfig } from '@/lib/storage/modules/actions';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,8 @@ export function PromptManager() {
     type: 'success' | 'error';
     text: string;
   } | null>(null);
+  // 添加消息定时器引用
+  const messageTimeoutRef = useRef<NodeJS.Timeout>();
 
   // 加载提示词列表和同步状态
   useEffect(() => {
@@ -182,13 +184,31 @@ export function PromptManager() {
       if (copyTimeoutRef.current) {
         clearTimeout(copyTimeoutRef.current);
       }
+      if (messageTimeoutRef.current) {
+        clearTimeout(messageTimeoutRef.current);
+      }
     };
   }, []);
 
-  // 显示操作消息
+  // 优化显示消息函数
   const showMessage = (type: 'success' | 'error', text: string) => {
+    // 清除之前的定时器
+    if (messageTimeoutRef.current) {
+      clearTimeout(messageTimeoutRef.current);
+    }
+    
     setActionMessage({ type, text });
-    setTimeout(() => setActionMessage(null), 2000);
+    
+    // 设置新的定时器，延长显示时间到 3 秒
+    messageTimeoutRef.current = setTimeout(() => {
+      setActionMessage(prev => {
+        // 只有当前消息才被清除，避免清除新的消息
+        if (prev?.text === text && prev?.type === type) {
+          return null;
+        }
+        return prev;
+      });
+    }, 3000);
   };
 
   // 处理关联到操作区
@@ -236,8 +256,6 @@ export function PromptManager() {
         enabled: false,
         updatedAt: Date.now()
       });
-
-      showMessage('success', '已取消关联');
     } catch (error) {
       console.error('Failed to unlink prompt:', error);
       showMessage('error', '取消关联失败');
@@ -317,7 +335,7 @@ export function PromptManager() {
 
   // 列表视图
   return (
-    <div className='flex flex-col h-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-md'>
+    <div className='relative flex flex-col h-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-md'>
       {/* 搜索栏 */}
       <div className='p-4 border-b border-gray-200/10'>
         <div className='flex items-center gap-3'>
@@ -352,27 +370,19 @@ export function PromptManager() {
             filteredPrompts.map((prompt) => (
               <div
                 key={prompt.id}
-                className='p-3 border border-gray-200/50 dark:border-gray-700/50 rounded-lg hover:border-blue-500 transition-colors dark:hover:border-blue-500 bg-white/50 dark:bg-gray-800/50'
+                className='relative p-3 border border-gray-200/50 dark:border-gray-700/50 rounded-lg hover:border-blue-500 transition-colors dark:hover:border-blue-500 bg-white/50 dark:bg-gray-800/50'
               >
                 <div className='flex items-center justify-between mb-2'>
-                  <div className="flex items-center gap-2">
-                    <h3 className='font-medium'>{prompt.title}</h3>
-                    {prompt.isLinkedToAction && (
-                      <div className="px-2 py-0.5 text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full">
-                        已关联
-                      </div>
-                    )}
-                  </div>
+                  <h3 className='font-medium'>{prompt.title}</h3>
                   <div className='flex gap-1'>
                     <Button 
                       size="icon" 
                       variant="ghost" 
                       className={cn(
-                        'h-8 w-8',
+                        'group relative h-8 w-8 transition-all duration-300',
                         prompt.isLinkedToAction ? 'text-blue-500 hover:text-blue-600' : 'hover:text-blue-500'
                       )}
                       onClick={() => prompt.isLinkedToAction ? handleUnlink(prompt) : handleLink(prompt)}
-                      title={prompt.isLinkedToAction ? '取消关联' : '关联到操作区'}
                       disabled={isLinking === prompt.id}
                     >
                       {isLinking === prompt.id ? (
@@ -382,15 +392,49 @@ export function PromptManager() {
                       ) : (
                         <Link className='h-4 w-4' />
                       )}
+                      <div className="absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2">
+                        <div className={cn(
+                          "relative px-2 py-1 rounded-md",
+                          "text-xs text-slate-100 whitespace-nowrap",
+                          "bg-slate-800/90 dark:bg-slate-900/90",
+                          "opacity-0 transition-all duration-200 translate-y-2",
+                          "group-hover:opacity-100 group-hover:translate-y-0"
+                        )}>
+                          {prompt.isLinkedToAction ? '取消关联' : '关联到操作区'}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800/90 dark:border-t-slate-900/90" />
+                        </div>
+                      </div>
                     </Button>
+
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className='h-8 w-8'
-                      onClick={() => navigator.clipboard.writeText(prompt.content)}
+                      className={cn(
+                        'relative h-8 w-8',
+                        copiedId === prompt.id && 'text-blue-500 dark:text-blue-400'
+                      )}
+                      onClick={() => handleCopy(prompt)}
                     >
-                      <Copy className='h-4 w-4' />
+                      {copiedId === prompt.id ? (
+                        <Check className='h-4 w-4 animate-scale-in' />
+                      ) : (
+                        <Copy className='h-4 w-4' />
+                      )}
+                      {copiedId === prompt.id && (
+                        <div className="absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2">
+                          <div className={cn(
+                            "relative px-2 py-1 rounded-md",
+                            "text-xs text-white whitespace-nowrap",
+                            "bg-emerald-500/90 dark:bg-emerald-500/90",
+                            "animate-fade-in-up"
+                          )}>
+                            已复制
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-emerald-500/90 dark:border-t-emerald-500/90" />
+                          </div>
+                        </div>
+                      )}
                     </Button>
+
                     <Button 
                       size="icon" 
                       variant="ghost" 
@@ -434,11 +478,24 @@ export function PromptManager() {
 
       {/* 操作反馈消息 */}
       {actionMessage && (
-        <div className={cn(
-          'fixed top-4 right-4 px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm animate-fade-in-up',
-          actionMessage.type === 'success' ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'
-        )}>
-          {actionMessage.text}
+        <div className="fixed inset-x-0 bottom-4 flex justify-center z-[9999] pointer-events-none">
+          <div className={cn(
+            "px-4 py-2 rounded-full shadow-lg backdrop-blur-sm",
+            "text-sm font-medium",
+            "flex items-center gap-2",
+            "transform transition-all duration-300",
+            "animate-message-in will-change-transform",
+            actionMessage.type === 'success' 
+              ? 'bg-blue-500/90 text-white' 
+              : 'bg-red-500/90 text-white'
+          )}>
+            {actionMessage.type === 'success' ? (
+              <Check className="w-4 h-4 animate-scale-in" />
+            ) : (
+              <AlertCircle className="w-4 h-4 animate-scale-in" />
+            )}
+            <span className="relative top-px">{actionMessage.text}</span>
+          </div>
         </div>
       )}
     </div>
