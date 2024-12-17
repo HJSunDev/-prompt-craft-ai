@@ -1,0 +1,90 @@
+.pc-action-container {
+  position: fixed;
+  right: 70px;
+  bottom: 70px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1),
+              0 8px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.pc-main-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(59, 130, 246, 0.3);
+}
+
+.pc-main-button:hover {
+  transform: scale(1.05);
+  background: #2563eb;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* 成功状态 */
+.pc-main-button.success {
+  background: #22c55e;
+  transform: scale(1);
+  box-shadow: 0 2px 5px rgba(34, 197, 94, 0.3);
+}
+
+/* 图标容器 */
+.pc-button-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 默认图标 */
+.pc-button-default {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 成功图标 */
+.pc-button-success {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+/* 成功状态下的图标动画 */
+.pc-main-button.success .pc-button-default {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.pc-main-button.success .pc-button-success {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 暗色模式 */
+@media (prefers-color-scheme: dark) {
+  .pc-action-container {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2),
+                0 8px 20px rgba(0, 0, 0, 0.12);
+  }
+} 

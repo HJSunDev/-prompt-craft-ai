@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Plus, Copy, Edit, Trash2, Check } from 'lucide-react';
+import { Search, Plus, Copy, Edit, Trash2, Check, Link, Link2Off } from 'lucide-react';
 import { promptsStorage, type Prompt } from '@/lib/storage';
+import { actionConfigStorage, type ActionConfig } from '@/lib/storage/modules/actions';
 import { cn } from '@/lib/utils';
 
 export function PromptManager() {
@@ -19,12 +20,57 @@ export function PromptManager() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   // 定时器引用
   const copyTimeoutRef = useRef<NodeJS.Timeout>();
+  const [isLinking, setIsLinking] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
-  // 加载提示词列表
+  // 加载提示词列表和同步状态
   useEffect(() => {
-    promptsStorage.getWithDefault().then(setPrompts);
-    const unwatch = promptsStorage.watch(setPrompts);
-    return () => unwatch();
+    const loadPrompts = async () => {
+      try {
+        const [promptsList, actionConfig] = await Promise.all([
+          promptsStorage.getWithDefault(),
+          actionConfigStorage.getWithDefault()
+        ]);
+
+        // 如果有关联的提示词，更新提示词列表的关联状态
+        const updatedPrompts = promptsList.map(p => ({
+          ...p,
+          isLinkedToAction: actionConfig.enabled && actionConfig.promptId === p.id
+        }));
+
+        setPrompts(updatedPrompts);
+      } catch (error) {
+        console.error('Failed to load prompts:', error);
+        showMessage('error', '加载提示词失败');
+      }
+    };
+
+    loadPrompts();
+
+    // 监听提示词和操作区配置的变化
+    const unwatchPrompts = promptsStorage.watch(async (newPrompts) => {
+      const actionConfig = await actionConfigStorage.getWithDefault();
+      const updatedPrompts = newPrompts.map(p => ({
+        ...p,
+        isLinkedToAction: actionConfig.enabled && actionConfig.promptId === p.id
+      }));
+      setPrompts(updatedPrompts);
+    });
+
+    const unwatchAction = actionConfigStorage.watch(async (newConfig) => {
+      setPrompts(prev => prev.map(p => ({
+        ...p,
+        isLinkedToAction: newConfig.enabled && newConfig.promptId === p.id
+      })));
+    });
+
+    return () => {
+      unwatchPrompts();
+      unwatchAction();
+    };
   }, []);
 
   // 处理编辑
@@ -139,6 +185,67 @@ export function PromptManager() {
     };
   }, []);
 
+  // 显示操作消息
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setActionMessage({ type, text });
+    setTimeout(() => setActionMessage(null), 2000);
+  };
+
+  // 处理关联到操作区
+  const handleLink = async (prompt: Prompt) => {
+    setIsLinking(prompt.id);
+    try {
+      // 更新提示词的关联状态
+      const newPrompts = prompts.map(p => ({
+        ...p,
+        isLinkedToAction: p.id === prompt.id
+      }));
+      await promptsStorage.set(newPrompts);
+
+      // 更新操作区配置
+      await actionConfigStorage.set({
+        type: 'copy',
+        enabled: true,
+        promptId: prompt.id,
+        updatedAt: Date.now()
+      });
+
+      showMessage('success', '已关联到操作区');
+    } catch (error) {
+      console.error('Failed to link prompt:', error);
+      showMessage('error', '关联失败');
+    } finally {
+      setIsLinking(null);
+    }
+  };
+
+  // 处理取消关联
+  const handleUnlink = async (prompt: Prompt) => {
+    setIsLinking(prompt.id);
+    try {
+      // 更新提示词的关联状态
+      const newPrompts = prompts.map(p => ({
+        ...p,
+        isLinkedToAction: false
+      }));
+      await promptsStorage.set(newPrompts);
+
+      // 更新操作区配置
+      await actionConfigStorage.set({
+        type: 'copy',
+        enabled: false,
+        updatedAt: Date.now()
+      });
+
+      showMessage('success', '已取消关联');
+    } catch (error) {
+      console.error('Failed to unlink prompt:', error);
+      showMessage('error', '取消关联失败');
+    } finally {
+      setIsLinking(null);
+    }
+  };
+
   // 编辑视图
   if (editingPrompt) {
     return (
@@ -248,34 +355,41 @@ export function PromptManager() {
                 className='p-3 border border-gray-200/50 dark:border-gray-700/50 rounded-lg hover:border-blue-500 transition-colors dark:hover:border-blue-500 bg-white/50 dark:bg-gray-800/50'
               >
                 <div className='flex items-center justify-between mb-2'>
-                  <h3 className='font-medium'>{prompt.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className='font-medium'>{prompt.title}</h3>
+                    {prompt.isLinkedToAction && (
+                      <div className="px-2 py-0.5 text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full">
+                        已关联
+                      </div>
+                    )}
+                  </div>
                   <div className='flex gap-1'>
                     <Button 
                       size="icon" 
                       variant="ghost" 
                       className={cn(
-                        'relative h-8 w-8 transition-all duration-300',
-                        copiedId === prompt.id && 'text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-500'
+                        'h-8 w-8',
+                        prompt.isLinkedToAction ? 'text-blue-500 hover:text-blue-600' : 'hover:text-blue-500'
                       )}
-                      onClick={() => handleCopy(prompt)}
+                      onClick={() => prompt.isLinkedToAction ? handleUnlink(prompt) : handleLink(prompt)}
+                      title={prompt.isLinkedToAction ? '取消关联' : '关联到操作区'}
+                      disabled={isLinking === prompt.id}
                     >
-                      <div className="relative">
-                        {copiedId === prompt.id ? (
-                          <Check className='h-4 w-4 animate-scale-in' />
-                        ) : (
-                          <Copy className='h-4 w-4' />
-                        )}
-                        {copiedId === prompt.id && (
-                          <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2">
-                            <div className="relative">
-                              <div className="px-3 py-1.5 text-xs font-medium text-white/90 rounded-lg bg-blue-500/90 dark:bg-blue-500/90 shadow-lg whitespace-nowrap animate-fade-in-up backdrop-blur-sm">
-                                已复制
-                                <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 transform rotate-45 w-[10px] h-[10px] bg-blue-500/90 dark:bg-blue-500/90" />
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      {isLinking === prompt.id ? (
+                        <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : prompt.isLinkedToAction ? (
+                        <Link2Off className='h-4 w-4' />
+                      ) : (
+                        <Link className='h-4 w-4' />
+                      )}
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className='h-8 w-8'
+                      onClick={() => navigator.clipboard.writeText(prompt.content)}
+                    >
+                      <Copy className='h-4 w-4' />
                     </Button>
                     <Button 
                       size="icon" 
@@ -317,6 +431,16 @@ export function PromptManager() {
           )}
         </div>
       </div>
+
+      {/* 操作反馈消息 */}
+      {actionMessage && (
+        <div className={cn(
+          'fixed top-4 right-4 px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm animate-fade-in-up',
+          actionMessage.type === 'success' ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'
+        )}>
+          {actionMessage.text}
+        </div>
+      )}
     </div>
   );
 } 

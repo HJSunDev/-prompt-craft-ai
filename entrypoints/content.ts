@@ -1,17 +1,18 @@
-import { sendMessage } from '@/lib/messaging';
+import { actionContainer } from './content/action-container';
 
-
-// 定义内容脚本
+// 内容脚本入口
 export default defineContentScript({
-  // 匹配的URL模式
-  matches: ['*://*.google.com/*'],
-  // 主函数
+  matches: [
+    '*://claude.ai/chat/*',
+    '*://claude.ai/new',
+    '*://*.google.com/*',
+    '*://*.coze.com/store/agent/*'
+  ],
+  
   async main() {
-    // 输出欢迎信息到控制台
-    console.log('Hello content...');
+    console.log('Content script loaded at:', window.location.href);
 
-    const length = await sendMessage('getStringLength', 'hello world');
-
-    console.log(length);
+    // 初始化操作区
+    await actionContainer.init();
   },
 });

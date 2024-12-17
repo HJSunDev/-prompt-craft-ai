@@ -6,6 +6,7 @@ export interface Prompt {
   title: string;
   content: string;
   tags: string[];
+  isLinkedToAction?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -27,6 +28,7 @@ const config: StorageConfig<Prompt[]> = {
           type: 'array',
           items: { type: 'string' }
         },
+        isLinkedToAction: { type: 'boolean' },
         createdAt: { type: 'number' },
         updatedAt: { type: 'number' }
       }
