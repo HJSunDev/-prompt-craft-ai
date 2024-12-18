@@ -250,15 +250,36 @@ class CozeButton implements SiteButtonModule {
  * 网站按钮管理器
  */
 class SiteButtons {
-  private modules: SiteButtonModule[] = [
-    new CozeButton()
-  ];
+  private modules: SiteButtonModule[] = [];
+  
+  // 定义支持的网站配置映射
+  private static readonly SITE_CONFIGS = new Map([
+    ['coze.com', () => new CozeButton()]
+    // 未来可以轻松添加其他网站
+    // ['other-site.com', () => new OtherSiteButton()]
+  ]);
+
+  constructor() {
+    // 根据当前 URL 初始化对应的模块
+    const url = window.location.href;
+    
+    // 遍历配置映射,找到匹配的网站并初始化对应模块
+    for (const [domain, moduleFactory] of SiteButtons.SITE_CONFIGS) {
+      if (url.includes(domain)) {
+        this.modules.push(moduleFactory());
+      }
+    }
+  }
 
   async init() {
-    // 初始化所有网站模块
-    await Promise.all(
-      this.modules.map(module => module.init())
-    );
+    try {
+      // 并行初始化所有网站模块
+      await Promise.all(
+        this.modules.map(module => module.init())
+      );
+    } catch (error) {
+      console.error('Failed to initialize site buttons:', error);
+    }
   }
 
   destroy() {
