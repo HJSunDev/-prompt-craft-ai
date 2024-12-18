@@ -1,3 +1,4 @@
+import { sendMessage } from '@/lib/messaging';
 import type { Storage, StorageConfig } from './types';
 
 /**
@@ -10,12 +11,8 @@ export function createStorage<T>(config: StorageConfig<T>): Storage<T> {
     // 获取存储的值
     async get() {
       try {
-        return new Promise((resolve) => {
-          // 从 Chrome 的本地存储中获取值
-          chrome.storage.local.get([config.key], (result) => {
-            resolve(result[config.key] as T);
-          });
-        });
+        const result = await sendMessage('storageGet', { key: config.key });
+        return result as T;
       } catch (error) {
         console.error(`Storage get error for ${config.key}:`, error);
         throw error;

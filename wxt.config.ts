@@ -17,6 +17,11 @@ export default defineConfig({
     permissions: [
       "storage"
     ],
+    // 添加 host 权限
+    host_permissions: [
+      "*://claude.ai/*",
+      "*://*.coze.com/store/agent/*"
+    ],
     content_security_policy: {
       extension_pages: "script-src 'self' 'wasm-unsafe-eval' http://localhost:3000 http://localhost:3001; object-src 'self'"
     }

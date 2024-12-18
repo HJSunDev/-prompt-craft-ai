@@ -15,6 +15,17 @@ export default defineBackground(() => {
     return message.data.length;
   });
 
+  // 处理存储获取请求
+  onMessage('storageGet', async (message) => {
+    try {
+      const result = await chrome.storage.local.get(message.data.key);
+      return result[message.data.key];
+    } catch (error) {
+      console.error('Storage get error:', error);
+      throw error;
+    }
+  });
+
   // 示例：记录访问次数
   async function updateVisitStats() {
     // 获取当前访问次数
@@ -39,7 +50,6 @@ export default defineBackground(() => {
         console.log(
           `最后访问时间: ${changes.lastVisitTime.newValue}`
         );
-
       }
     }
   });
