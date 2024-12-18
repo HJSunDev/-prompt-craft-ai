@@ -22,16 +22,7 @@ export function createStorage<T>(config: StorageConfig<T>): Storage<T> {
     // 设置存储的值
     async set(value: T) {
       try {
-        return new Promise((resolve) => {
-          // 将值存储到 Chrome 的本地存储中
-          chrome.storage.local.set({ [config.key]: value }, () => {
-            if (chrome.runtime.lastError) {
-              console.error(`Storage set error for ${config.key}:`, chrome.runtime.lastError);
-              throw chrome.runtime.lastError;
-            }
-            resolve();
-          });
-        });
+        await sendMessage('storageSet', { key: config.key, value });
       } catch (error) {
         console.error(`Storage set error for ${config.key}:`, error);
         throw error;

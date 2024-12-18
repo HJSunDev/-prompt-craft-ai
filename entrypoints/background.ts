@@ -26,6 +26,16 @@ export default defineBackground(() => {
     }
   });
 
+  // 处理存储设置请求
+  onMessage('storageSet', async (message) => {
+    try {
+      await chrome.storage.local.set({ [message.data.key]: message.data.value });
+    } catch (error) {
+      console.error('Storage set error:', error);
+      throw error;
+    }
+  });
+
   // 示例：记录访问次数
   async function updateVisitStats() {
     // 获取当前访问次数
