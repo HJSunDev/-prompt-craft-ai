@@ -36,6 +36,16 @@ export default defineBackground(() => {
     }
   });
 
+  // 处理存储删除请求
+  onMessage('storageRemove', async (message) => {
+    try {
+      await chrome.storage.local.remove(message.data.key);
+    } catch (error) {
+      console.error('Storage remove error:', error);
+      throw error;
+    }
+  });
+
   // 示例：记录访问次数
   async function updateVisitStats() {
     // 获取当前访问次数

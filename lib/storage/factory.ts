@@ -76,16 +76,7 @@ export function createStorage<T>(config: StorageConfig<T>): Storage<T> {
     // 删除存储的值
     async remove() {
       try {
-        return new Promise<void>((resolve) => {
-          // 从 Chrome 的本地存储中删除值
-          chrome.storage.local.remove(config.key, () => {
-            if (chrome.runtime.lastError) {
-              console.error(`Storage remove error for ${config.key}:`, chrome.runtime.lastError);
-              throw chrome.runtime.lastError;
-            }
-            resolve();
-          });
-        });
+        await sendMessage('storageRemove', { key: config.key });
       } catch (error) {
         console.error(`Storage remove error for ${config.key}:`, error);
         throw error;
