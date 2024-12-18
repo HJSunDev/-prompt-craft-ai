@@ -10,9 +10,15 @@ export default defineConfig({
   outDir: "dist",        
   // 添加权限配置
   manifest: {
+    name: "Prompt Craft",
+    description: "AI 体验优化工具",
+    version: "1.0.0",
     // 添加存储权限
     permissions: [
       "storage"
-    ]
+    ],
+    content_security_policy: {
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval' http://localhost:3000 http://localhost:3001; object-src 'self'"
+    }
   }        
 });
