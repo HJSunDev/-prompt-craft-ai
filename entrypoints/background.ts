@@ -1,4 +1,4 @@
-import { onMessage } from '@/lib/messaging';
+import { onMessage, sendMessage } from '@/lib/messaging';
 
 // 定义存储的数据结构
 interface StorageSchema {
@@ -59,18 +59,22 @@ export default defineBackground(() => {
     });
   }
 
-  // 监听存储变化
-  browser.storage.onChanged.addListener((changes, areaName) => {
+  // 监听本地存储的变化并广播更新
+  chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local') {
-      if (changes.visitCount) {
-        console.log(
-          `访问次数从 ${changes.visitCount.oldValue} 更新为 ${changes.visitCount.newValue}`
-        );
-        // 输出最后访问时间
-        console.log(
-          `最后访问时间: ${changes.lastVisitTime.newValue}`
-        );
-      }
+      // 遍历所有变化的键并广播更新
+      Object.entries(changes).forEach(([key, change]) => {
+        sendMessage('storageChanged', {
+          key,
+          oldValue: change.oldValue,
+          newValue: change.newValue
+        }).catch(error => {
+          // 忽略连接未建立的错误，记录其他错误
+          if (!error.message.includes('Could not establish connection')) {
+            console.error(`[Background] 广播键 "${key}" 的变化失败:`, error);
+          }
+        });
+      });
     }
   });
 

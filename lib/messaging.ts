@@ -14,6 +14,12 @@ interface StorageRemoveMessage {
   key: string;
 }
 
+interface StorageChangeMessage {
+  key: string;
+  oldValue?: unknown;
+  newValue?: unknown;
+}
+
 // 定义消息协议
 interface ProtocolMap {
   // 原有的消息类型
@@ -22,6 +28,8 @@ interface ProtocolMap {
   storageGet(data: StorageGetMessage): Promise<unknown>;
   storageSet(data: StorageSetMessage): Promise<void>;
   storageRemove(data: StorageRemoveMessage): Promise<void>;
+  // 存储变化通知
+  storageChanged(data: StorageChangeMessage): void;
 }
 
 export const { sendMessage, onMessage } = defineExtensionMessaging<ProtocolMap>();
