@@ -65,11 +65,13 @@ export function createStorage<T>(config: StorageConfig<T>): Storage<T> {
         const listeners = storageListeners.get(config.key)!;
         listeners.add(callback);
 
-        // 获取当前存储值并立即调用回调函数
-        this.get().then(value => {
+        // 获取当前存储值（带默认值）并立即调用回调函数
+        this.getWithDefault().then(value => {
           callback(value);
         }).catch(error => {
           console.error(`[Storage] 获取键 "${config.key}" 的初始值失败:`, error);
+          // 发生错误时，使用默认值
+          callback(config.defaultValue);
         });
 
         // 返回一个函数用于移除当前回调监听
